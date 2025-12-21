@@ -1,1 +1,6 @@
-abc 123 10.5 teste
+123abc
+abc123.4
+123
+123.4
+abc
+abc123
