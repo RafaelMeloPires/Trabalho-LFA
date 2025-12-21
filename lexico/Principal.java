@@ -19,7 +19,6 @@ public class Principal {
     public Estado estadoId;
 
     public Principal() throws Exception {
-        // Carrega os AFDs
         afdNumero.ler("./lexico/AFD.XML");
         afdId.ler("./lexico/AFD_ID.xml");
     }
@@ -33,84 +32,29 @@ public class Principal {
         }
     }
 
-    /**
-     * Lê o próximo símbolo do arquivo
-     */
+    // Lê o próximo símbolo do arquivo
     public Simbolo proximo(BufferedReader reader) throws IOException {
         int charLido = reader.read();
+
+        // EOF
         if (charLido == -1) {
             return null;
         }
 
-        // Trata quebra de linha como símbolo explícito
-        if (charLido == 10) {
+        // IGNORA carriage return do Windows
+        if (charLido == 13) { // '\r'
+            return proximo(reader);
+        }
+
+        // Trata quebra de linha
+        if (charLido == 10) { // '\n'
             return new Simbolo('\n');
         }
 
         return new Simbolo((char) charLido);
     }
 
-    /**
-     * Analisador léxico
-     */
-    /*public Token lexico(BufferedReader r) throws IOException {
-        String lexema = "";
-
-        estadoNumero = afdNumero.getEstadoInicial();
-        estadoId = afdId.getEstadoInicial();
-
-        r.mark(1);
-        Simbolo p = proximo(r);
-
-        // Ignorar delimitadores iniciais
-        while (p != null && (p.toString().equals(" ") || p.toString().equals("\n"))) {
-            r.mark(1);
-            p = proximo(r);
-        }
-
-        if (p == null) {
-            return new Token("FIM", "");
-        }
-
-        while (p != null) {
-            lexema += p.toString();
-
-            if (estadoNumero != null) {
-                estadoNumero = afdNumero.p(estadoNumero, p);
-            }
-
-            if (estadoId != null) {
-                estadoId = afdId.p(estadoId, p);
-            }
-
-            // Nenhum AFD aceita continuar
-            if (estadoNumero == null && estadoId == null) {
-                return new Token("ERRO", lexema);
-            }
-
-            // NUMERO reconhecido
-            if (estadoNumero != null &&
-                    afdNumero.getEstadosFinais().pertence(estadoNumero)) {
-
-                r.reset(); // devolve delimitador
-                return new Token("NUMERO", lexema.trim());
-            }
-
-            // IDENTIFICADOR reconhecido
-            if (estadoId != null &&
-                    afdId.getEstadosFinais().pertence(estadoId)) {
-
-                r.reset(); // devolve delimitador
-                return new Token("IDENTIFICADOR", lexema.trim());
-            }
-
-            r.mark(1);
-            p = proximo(r);
-        }
-
-        return new Token("FIM", "");
-    }*/
-
+    // Analisador léxico
     public Token lexico(BufferedReader r) throws IOException {
         String lexema = "";
 
@@ -130,15 +74,8 @@ public class Principal {
 
         while (p != null) {
 
-            // Delimitador encerra token
+            // 🔹 Delimitador ENCERRA token (não entra no AFD)
             if (p.toString().equals(" ") || p.toString().equals("\n")) {
-
-                if (estadoNumero != null) {
-                    estadoNumero = afdNumero.p(estadoNumero, p);
-                }
-                if (estadoId != null) {
-                    estadoId = afdId.p(estadoId, p);
-                }
 
                 if (estadoNumero != null &&
                         afdNumero.getEstadosFinais().pertence(estadoNumero)) {
@@ -164,14 +101,23 @@ public class Principal {
                 estadoId = afdId.p(estadoId, p);
             }
 
+            // Se nenhum AFD aceita mais, consome até delimitador
             if (estadoNumero == null && estadoId == null) {
+                Simbolo erroChar = proximo(r);
+                while (erroChar != null &&
+                        !erroChar.toString().equals(" ") &&
+                        !erroChar.toString().equals("\n")) {
+
+                    lexema += erroChar.toString();
+                    erroChar = proximo(r);
+                }
                 return new Token("ERRO", lexema);
             }
 
             p = proximo(r);
         }
 
-        // 🚨 EOF = delimitador implícito
+        // 🔹 EOF encerra token
         if (estadoNumero != null &&
                 afdNumero.getEstadosFinais().pertence(estadoNumero)) {
             return new Token("NUMERO", lexema);
@@ -189,22 +135,21 @@ public class Principal {
         return new Token("FIM", "");
     }
 
-
-
-    /**
-     * Loop principal do analisador léxico
-     */
+    // Loop principal do analisador léxico
     public void inicio() {
         try (BufferedReader reader = new BufferedReader(new FileReader(nomeArquivo))) {
 
-            Token t = lexico(reader);
+            while (true) {
+                Token t = lexico(reader);
 
-            while (!t.tipo.equals("ERRO") && !t.tipo.equals("FIM")) {
+                if (t.tipo.equals("FIM")) {
+                    System.out.println(t);
+                    break;
+                }
+
+                // ERRO também é impresso e a análise continua
                 System.out.println(t);
-                t = lexico(reader);
             }
-
-            System.out.println(t);
 
         } catch (IOException ex) {
             Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
