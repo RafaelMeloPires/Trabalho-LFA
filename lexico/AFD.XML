@@ -25,11 +25,13 @@
        <elemento valor= "F"/>
    </estados>
 
-   <estadosFinais>
-       <elemento valor="F"/>
-   </estadosFinais>
+    <estadosFinais>
+        <elemento valor="5"/> <!-- inteiro -->
+        <elemento valor="4"/> <!-- fracionário -->
+        <elemento valor="F"/> <!-- com delimitador -->
+    </estadosFinais>
 
-   <funcaoPrograma>
+    <funcaoPrograma>
        <elemento origem="1"  destino="5" simbolo="1"/>
        <elemento origem="1"  destino="5" simbolo="2"/>
        <elemento origem="1"  destino="5" simbolo="3"/>
