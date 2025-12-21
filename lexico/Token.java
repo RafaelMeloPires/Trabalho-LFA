@@ -9,6 +9,9 @@ public class Token {
 
     @Override
     public String toString() {
+        if (tipo.equals("FIM")) {
+            return "<FIM>";
+        }
         return "<" + tipo + ", " + lexema + ">";
     }
 }
